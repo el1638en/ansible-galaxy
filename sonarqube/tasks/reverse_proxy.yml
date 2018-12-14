@@ -1,0 +1,18 @@
+---
+# tasks file for reverse proxy SonarQube
+
+- name: Copy virtualhost file
+  template:
+    src: vhosts_sonarqube_apache2.j2
+    dest: "/etc/apache2/sites-available/sonarqube.conf"
+    owner: root
+    group: root
+
+- name: Enable Virtualhost for sonar.
+  file:
+    src: "/etc/apache2/sites-available/sonarqube.conf"
+    dest: "/etc/apache2/sites-enabled/sonarqube.conf"
+    state: link
+    owner: root
+    group: root
+    mode: 0777

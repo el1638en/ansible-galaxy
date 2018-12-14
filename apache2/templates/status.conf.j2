@@ -1,0 +1,37 @@
+<VirtualHost *:{{ apache2_port }}>
+
+  # ServerAdmin: Your address, where problems with the server should be
+  # e-mailed.  This address appears on some server-generated pages, such
+  # as error documents.  e.g. admin@your-domain.com
+  ServerAdmin {{ apache2_server_admin }}
+
+  {% if apache2_status_server_name != "" %}
+  # ServerName gives the name and port that the server uses to identify itself.
+  # This can often be determined automatically, but we recommend you specify
+  # it explicitly to prevent problems during startup.
+  # If your host doesn't have a registered DNS name, enter its IP address here.
+  ServerName {{ apache2_status_server_name }}
+  {% endif %}
+
+  {% if apache2_status_server_alias != "" %}
+  ServerAlias {{ apache2_status_server_alias }}
+  {% endif %}
+
+  #RewriteEngine on
+  #RewriteRule ^/ /server-status [L,PT]
+  <Location /server-status>
+    SetHandler server-status
+    {% if apache2_status_require_ip != "" %}
+    Require ip {{ apache2_status_require_ip }}
+    {% endif %}
+
+    {% if apache2_status_require_host != "" %}
+    Require host {{ apache2_status_require_host }}
+    {% endif %}
+
+    AuthType Basic
+    AuthName "Restricted Content"
+    AuthUserFile {{ apache2_status_dir }}/.htpasswd
+    Require valid-user
+  </Location>
+</VirtualHost>

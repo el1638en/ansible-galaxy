@@ -11,8 +11,10 @@ tools_list:
   - sshpass
   - python-pip
   - certbot
+  - logrotate
 
 # Liste des package python
 tools_python:
   - virtualenv
   - virtualenvwrapper
+  - passlib

@@ -1,0 +1,21 @@
+---
+# defaults file for sonarqube
+sonarqube_version: "6.4"
+sonarqube_install_directory: "/opt/sonar"
+sonarqube_archive_name: "sonarqube-{{ sonarqube_version }}.zip"
+sonarqube_home: "{{ sonarqube_install_directory }}/sonarqube-{{ sonarqube_version }}"
+sonarqube_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
+sonarqube_postgres_host: localhost
+sonarqube_postgres_username: sonar
+sonarqube_postgres_password: sonar
+sonarqube_postgres_database: sonar
+sonarqube_postgres_jdbc_url: "jdbc:postgresql://{{ sonarqube_postgres_host }}/{{ sonarqube_postgres_database }}"
+sonarqube_postgres_config:
+    - { regexp: "^#sonar.jdbc.username=", value: "sonar.jdbc.username={{ sonarqube_postgres_username }}" }
+    - { regexp: "^#sonar.jdbc.password=", value: "sonar.jdbc.password={{ sonarqube_postgres_password }}" }
+    - { regexp: "^#sonar.jdbc.url=", value: "sonar.jdbc.url={{ sonarqube_postgres_jdbc_url }}" }
+sonarqube_web_port: 9000
+sonarqube_host: 192.168.1.21
+sonarqube_reverse_proxy_enabled: false
+sonarqube_reverse_proxy_http_default_port: 80
+sonarqube_reverse_proxy_server_name:

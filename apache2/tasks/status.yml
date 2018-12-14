@@ -1,0 +1,38 @@
+---
+# tasks file to configure status module for apache2
+
+- name: Installation du package python-passlib
+  apt:
+    pkg: python-passlib
+    state: present
+
+- name: Création du Répertoire d'Apache2 status
+  file:
+    path: "{{ apache2_status_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Création du fichier d'authentification
+  htpasswd:
+    path: "{{ apache2_status_dir }}/.htpasswd"
+    name: "{{ apache2_status_auth_login }}"
+    password: "{{ apache2_status_auth_passowrd }}"
+    owner: root
+    group: root
+    mode: 0640
+
+- name: Copie du fichier de configuration Apache2 status
+  template:
+    src: status.conf.j2
+    dest: "{{ apache2_mods_available_dir }}/status.conf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Activer Apache2 status configuration.
+  file:
+    src: "{{ apache2_mods_available_dir }}/status.conf"
+    dest: "{{ apache2_mods_enabled_dir }}/status.conf"
+    state: link

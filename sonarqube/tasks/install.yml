@@ -1,0 +1,52 @@
+---
+# tasks file to install sonarqube
+
+- name: Install archive tools
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "tar"
+    - "unzip"
+
+- name: Create SonarQube install directory
+  file:
+    path: "{{ sonarqube_install_directory }}"
+    state: directory
+    owner: root
+    group: root
+    recurse: true
+
+- name: Download, decompress and delete SonarQube archive
+  unarchive:
+    src: "{{ sonarqube_download_url }}"
+    dest: "{{ sonarqube_install_directory }}/"
+    owner: root
+    group: root
+    remote_src: true
+
+- include_tasks: database.yml
+
+- name: Change the config of sonar web port
+  lineinfile:
+    path: "{{ sonarqube_home }}/conf/sonar.properties"
+    regexp: "^#sonar.web.port="
+    line: "sonar.web.port={{ sonarqube_web_port }}"
+    state: present
+    owner: root
+    group: root
+
+- name: Copy systemd SonarQube script file
+  template:
+    src: sonar.service.j2
+    dest: "/etc/systemd/system/sonar.service"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable SonarQube service
+  systemd:
+    name: sonar
+    enabled: true
+  notify:
+    - Restart SonarQube

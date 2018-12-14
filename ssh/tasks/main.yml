@@ -3,7 +3,7 @@
 
 # https://www.ssi.gouv.fr/uploads/2014/01/NT_OpenSSH.pdf. Rule R2 & R3
 - name: Delete obsolete packages (Telnet, Rsh and Rlogin)
-  apt:
+  package:
     pkg: "{{ item }}"
     state: absent
   loop: "{{ ssh_delete_packages }}"
@@ -37,7 +37,7 @@
     mode: 0644
 
 - name: Install openssh-server package
-  apt:
+  package:
     pkg: "{{ ssh_package }}"
     state: present
 

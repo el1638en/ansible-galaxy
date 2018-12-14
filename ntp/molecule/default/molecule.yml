@@ -6,7 +6,7 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: instance
+  - name: debian
     image: maint/debian-systemd
     privileged: true
 provisioner:

@@ -1,0 +1,39 @@
+---
+
+- name: Install archive tools
+  package:
+    name: "{{item}}"
+    state: present
+  loop:
+    - "tar"
+    - "unzip"
+
+- name: Create gradle install directory
+  file:
+    path: "{{ gradle_install_directory }}"
+    state: directory
+    owner: root
+    group: root
+    recurse: true
+
+- name: Download, decompress and delete gradle archive
+  unarchive:
+    src: "{{ gradle_download_archive_url }}"
+    dest: "{{ gradle_install_directory }}/"
+    remote_src: true
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Add/Update environments variables
+  blockinfile:
+    dest: "/etc/profile.d/gradle.sh"
+    create: true
+    insertafter: EOF
+    block: |
+      # Gradle Home
+      GRADLE_HOME="{{ gradle_home }}"
+      export GRADLE_HOME
+      # Update PATH
+      PATH=$PATH:"$GRADLE_HOME/bin"
+    state: present

@@ -1,0 +1,11 @@
+---
+# tasks file for maven
+- name: Get Maven version installed on the machine
+  command: >
+    {{ maven_home }}/bin/mvn --version 2>&1
+  register: maven_version_result
+  ignore_errors: true
+  changed_when: false
+
+- include_tasks: install.yml
+  when: (maven_version_result is failed) or (maven_version not in maven_version_result.stdout)

@@ -1,0 +1,19 @@
+---
+# tasks file for nexus
+
+- name : Check nexus home directory exists
+  stat:
+    path: "{{ nexus_home }}"
+  register: nexus_home_result
+
+- name : include install file
+  include: install.yml
+  when: not nexus_home_result.stat.exists
+
+- name: Add Iptables rules for Nexus
+  include: iptables.yml
+  when: nexus_iptables_enabled
+
+- name: Add reverse proxy configuration
+  include: reverse_proxy.yml
+  when: nexus_reverse_proxy_enabled

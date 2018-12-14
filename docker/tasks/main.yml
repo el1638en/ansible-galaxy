@@ -1,7 +1,7 @@
 ---
 # tasks file for docker
 
-- include_tasks: setup-{{ ansible_os_family | lower }}.yml
+- include_tasks: "setup-{{ ansible_os_family | lower }}.yml"
 
 - name: Install Docker.
   package:

@@ -1,0 +1,17 @@
+---
+# defaults file for maven
+# Version de maven à installer
+maven_version: "3.5.2"
+# Fichier .tar.gz  de maven
+maven_archive_name: "apache-maven-{{ maven_version }}-bin.tar.gz"
+# Répertoire contenant  les versions de maven
+maven_install_directory: "/opt/maven"
+# Chemin absolu de maven
+maven_home: "{{maven_install_directory}}/apache-maven-{{ maven_version }}"
+# URL de téléchargement de maven
+maven_download_archive_url: "https://archive.apache.org/dist/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{maven_version}}-bin.tar.gz"
+
+# TODO : Les mots de passe doivent être securisés avec ansible-vault.
+# TODO : Encrypter les mots de pass. Regarder https://maven.apache.org/guides/mini/guide-encryption.html
+maven_settings_servers:
+# - { id: "nexus", username: "deploy", password: "admin123" }

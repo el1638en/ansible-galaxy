@@ -1,20 +1,18 @@
 import os
-import pytest
 import testinfra.utils.ansible_runner
 
 testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
     os.environ['MOLECULE_INVENTORY_FILE']).get_hosts('all')
 
 
-# TODO : Access ansible variable to get lit of package dynamiclly
-@pytest.mark.parametrize('pkg', [
-    'nfs-common',
-    'inetd',
-    'portmap',
-    'ppp',
-    'exim4'
-    ])
-def test_host_pkg(host, pkg):
-    package = host.package(pkg)
+ansible_vars_path = 'file=../../defaults/main.yml'
 
-    assert not package.is_installed
+
+def test_admin_tools_files(host):
+    ansible_file = host.ansible("include_vars", ansible_vars_path)
+    ansible_vars = ansible_file["ansible_facts"]
+
+    for pkg in ansible_vars['remove_services']:
+        package = host.package(pkg)
+
+        assert not package.is_installed

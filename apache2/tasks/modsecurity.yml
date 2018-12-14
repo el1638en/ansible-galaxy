@@ -1,0 +1,27 @@
+---
+
+- name: Vérifier si modsecurity.conf existe
+  stat:
+    path: "{{ apache2_mod_security_dir }}/modsecurity.conf"
+  register: stat_modsecurity_conf
+
+- name: Initialisation du fichier modsecurity.conf.
+  copy:
+    src: "{{ apache2_mod_security_dir }}/modsecurity.conf-recommended"
+    dest: "{{ apache2_mod_security_dir }}/modsecurity.conf"
+    owner: root
+    group: root
+    mode: 0644
+    remote_src: true
+  when: not stat_modsecurity_conf.stat.exists
+
+- name: Appliquer les directives de configurations de modsecurity
+  lineinfile:
+    dest: "{{ apache2_mod_security_dir }}/modsecurity.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.value }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: present
+  loop: "{{ apache2_mod_security_config }}"

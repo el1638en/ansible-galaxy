@@ -35,14 +35,15 @@ galaxy_info:
   #
   platforms:
     - name: Debian
-      versions: stretch
-  #   - 25
-  # - name: SomePlatform
-  #   versions:
-  #   - all
-  #   - 1.0
-  #   - 7
-  #   - 99.99
+      versions:
+        - 9.5 stretch
+    - name: Centos
+      versions:
+        - 7
+    - name: Ubuntu
+      versions:
+        - 18.04, bionic
+        - 16.04, xenail, latest
 
   galaxy_tags: []
   # List tags for your role here, one per line. A tag is a keyword that describes

@@ -6,8 +6,17 @@ driver:
 lint:
   name: yamllint
 platforms:
-  - name: instance
+  - name: debian
     image: maint/debian-systemd
+    privileged: true
+  - name: centos7
+    image: williamyeh/ansible:centos7
+    command: "/usr/sbin/init"
+    environment: { container: docker }
+    privileged: true
+  - name: ubuntu
+    image: solita/ubuntu-systemd
+    command: "/sbin/init"
     privileged: true
 provisioner:
   name: ansible

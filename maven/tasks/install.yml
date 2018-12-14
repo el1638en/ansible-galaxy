@@ -1,0 +1,40 @@
+---
+
+- name: Install archive tools
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "tar"
+    - "unzip"
+
+- name: Create maven directory
+  file:
+    path: "{{ maven_install_directory }}"
+    state: directory
+    owner: root
+    group: root
+    recurse: true
+
+- name: Download, decompress and delete maven archive
+  unarchive:
+    src: "{{ maven_download_archive_url }}"
+    dest: "{{ maven_install_directory }}/"
+    remote_src: true
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Add/Update environments variables
+  blockinfile:
+    dest: "/etc/profile.d/maven.sh"
+    create: true
+    insertafter: EOF
+    block: |
+      # Maven Home
+      M2_HOME="{{ maven_home }}"
+      export M2_HOME
+      # Update PATH
+      PATH=$PATH:"$M2_HOME/bin"
+      export PATH
+    state: present

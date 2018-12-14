@@ -1,0 +1,13 @@
+---
+# tasks to enable firwall
+
+- name: Add Iptables Input trafic rule for sonarqube
+  iptables:
+    action: insert
+    chain: INPUT
+    protocol: tcp
+    ctstate: NEW,ESTABLISHED
+    destination_port: "{{ sonarqube_web_port }}"
+    jump: ACCEPT
+    state: present
+    comment: "TCP - Sonarqube Input trafic"

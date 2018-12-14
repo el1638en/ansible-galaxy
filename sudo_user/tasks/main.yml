@@ -1,0 +1,73 @@
+---
+# tasks file for sudo_user
+
+- name: install openssh
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "openssh-server"
+    - "sudo"
+
+- name: Check for user
+  command: >
+    egrep "^{{ user_name }}" /etc/passwd
+  register: user_exists
+  ignore_errors: true
+  changed_when: false
+
+- name: Create user on servers machine
+  user:
+    name: "{{ user_name }}"
+    comment: "{{ user_comment }}"
+    shell: /bin/bash
+    password: "{{ 'user_password' | password_hash('sha512') }}"
+    generate_ssh_key: true
+    ssh_key_bits: 2048
+    ssh_key_type: rsa
+    ssh_key_passphrase: "{{ user_ssh_key_passphrase }}"
+  no_log: true
+  when: (user_exists is failed) or (user_exists.rc != 0)
+
+- name: Add public key to users's authorized keys
+  lineinfile:
+    dest: "/home/{{ user_name }}/.ssh/authorized_keys"
+    create: true
+    state: present
+    mode: 0600
+    owner: "{{ user_name }}"
+    group: "{{ user_name }}"
+    line: "{{ user_public_ssh_key }}"
+  when: (user_public_ssh_key is defined) and (user_public_ssh_key != None)
+
+- name: Create sudoers.d directory
+  file:
+    path: /etc/sudoers.d
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Set includedir in sudoers
+  lineinfile:
+    path: /etc/sudoers
+    line: "#includedir /etc/sudoers.d"
+    state: present
+    validate: "/usr/sbin/visudo -cf %s"
+
+- name: Create sudoers
+  lineinfile:
+    path: "/etc/sudoers.d/{{ user_name }}"
+    create: true
+    state: present
+    mode: 0440
+    owner: root
+    group: root
+    line: "{{ user_name }} ALL=(ALL:ALL) NOPASSWD: ALL"
+    validate: "/usr/sbin/visudo -cf %s"
+
+- name: Remove sudoers
+  file:
+    path: "/etc/sudoers.d/{{ user_remove_sudo_right }}"
+    state: absent
+  when: (user_remove_sudo_right is defined) and (user_remove_sudo_right != None)
