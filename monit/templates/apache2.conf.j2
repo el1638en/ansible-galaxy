@@ -1,0 +1,4 @@
+check process apache with pidfile {{ monit_apache2_pid_file }}
+  start program = "{{ monit_apache2_start_command }}"
+  stop program = "{{ monit_apache2_stop_command }}"
+  if 5 restarts within 5 cycles then timeout

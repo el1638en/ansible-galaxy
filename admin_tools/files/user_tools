@@ -1,0 +1,186 @@
+#!/bin/bash
+
+######### ===== Install =====
+# 1°) Copy file into this directory : cp user_tools.sh /usr/local/bin/user_tools
+# 2°) Update right :	chmod 755 /usr/local/bin/user_tools
+# You can call command user_tools in your shell as super-user root
+######### ===== END =====
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOR='\033[0m'
+ANSIBLE_USER_NAME='deploy'
+ANSIBLE_USER_PASSWORD='deploy'
+
+checkRoot() {
+   if ! [ $(id -u) -eq 0 ]; then
+   	echo -e "${RED}Only root user can run this program.${NO_COLOR}"
+   	exit 2
+   fi
+}
+
+install_sudo_package() {
+
+	echo "###################################################################################"
+	echo "Starting  install Sudo package......."
+	echo "###################################################################################"
+
+	apt install -y sudo
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Sudo package is installed successfully !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to install Sudo package. Exit !${NO_COLOR}"
+	fi
+	pause
+}
+
+add_user() {
+	if ! [ $# -eq 3 ] ; then
+		read -p "Enter username : " username
+		read -s -p "Enter password : " password
+		echo
+		read -p "Give sudo rigt to the user(yes/no) ? : " sudo_right
+	else
+		username=$1
+  		password=$2
+  		sudo_right=$3
+  		shift; shift; shift;
+  	fi
+	echo "########   Starting  add user $username with sudo right=$sudo_right.  ########"
+  	egrep "^$username" /etc/passwd >/dev/null
+	if [ $? -eq 0 ]; then
+		echo -e "${RED}Failed to add user $username because he already exists !${NO_COLOR}"
+	else
+		pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
+		useradd -p $pass -d /home/"$username" -m -s /bin/bash "$username"
+		if [ $? -eq 0 ]; then
+			echo -e "${GREEN}User $username has been added to system successfully !${NO_COLOR}"
+			user_ssh_dir="/home/$username/.ssh"
+			user_authorized_keys_file="$user_ssh_dir/authorized_keys"
+			sudo -u $username mkdir $user_ssh_dir
+			sudo -u $username chmod -R 700 $user_ssh_dir
+			sudo -u $username touch $user_authorized_keys_file
+			sudo -u $username chmod 600 $user_authorized_keys_file
+			echo -e "${GREEN}Inialize ssh authorized_keys file for user $username.${NO_COLOR}"
+		else
+			echo -e "${RED}Failed to add a user $username !${NO_COLOR}"
+		fi
+	fi
+
+	if test "$sudo_right" = "yes"; then
+		add_sudo_rights $username
+	else
+		pause
+	fi
+}
+
+delete_user() {
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter username : " username
+	else
+		username=$1
+  		shift;
+  	fi
+  	egrep "^$username" /etc/passwd >/dev/null
+	if ! [ $? -eq 0 ]; then
+		echo -e "${RED}Failed to delete. Unkonwn user $username !${NO_COLOR}"
+		pause
+	else
+		deluser $username sudo
+		userdel -r $username
+		remove_sudo_rights $username
+	fi
+}
+
+
+add_sudo_rights() {
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter username : " username
+	else
+		username=$1
+  		shift;
+  	fi
+	echo "########   Starting  add sudo right to user $username.  ########"
+  	egrep "^$username" /etc/passwd >/dev/null
+	if [ $? -eq 0 ]; then
+		touch /etc/sudoers.d/"$username"
+		echo "$username ALL=(ALL:ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$username"
+		visudo -cf "/etc/sudoers.d/$username"
+		if [ $? -eq 0 ]; then
+			echo -e "${GREEN}Sudo right has been given to user $username successfully !${NO_COLOR}"
+		else
+			echo -e "${RED}Failed to add sudo right to user $username !${NO_COLOR}"
+		fi
+	else
+		echo -e "${RED}Failed to add sudo right.Unknown user $username !${NO_COLOR}"
+	fi
+	pause
+}
+
+remove_sudo_rights() {
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter username : " username
+	else
+		username=$1
+  		shift;
+  	fi
+	echo "########   Starting  remove sudo right to user $username.  ########"
+	user_sudo_file="/etc/sudoers.d/$username"
+	if [ -f "$user_sudo_file" ]; then
+		rm -f $user_sudo_file
+	fi
+	echo -e "${GREEN}Sudo rights have been removed from User $username!${NO_COLOR}"
+	pause
+}
+
+menus() {
+	clear
+	echo "~~~~~~~~~~~~~~~~~~~~~"
+	echo " M A I N - M E N U"
+	echo "~~~~~~~~~~~~~~~~~~~~~"
+	echo "1. Install sudo program"
+	echo "2. Add ansible user (name=deploy/password=deploy) for Ansible deployment"
+	echo "3. Add user"
+	echo "4. Remove user"
+	echo "5. Add sudo right to user"
+	echo "6. Remove sudo right to user"
+	echo "7. Exit"
+}
+
+read_options() {
+	local choice
+	read -p "Enter choice [ 1 - 7] " choice
+	case $choice in
+		1) install_sudo_package ;;
+		2) add_user $ANSIBLE_USER_NAME $ANSIBLE_USER_PASSWORD yes ;;
+		3) add_user ;;
+		4) delete_user ;;
+		5) add_sudo_rights ;;
+		6) remove_sudo_rights ;;
+		7) exit 0 ;;
+		*) echo -e "${RED}Error...${NO_COLOR}" && sleep 2
+	esac
+}
+
+pause(){
+  read -p "Press [Enter] key to continue..." fackEnterKey
+}
+
+# Run as root, of course.
+checkRoot
+
+
+# ----------------------------------------------
+# Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGINT SIGQUIT SIGTSTP
+
+# -----------------------------------
+# Main logic - infinite loop
+# ------------------------------------
+while true
+do
+	menus
+	read_options
+done

@@ -1,0 +1,9 @@
+---
+# tasks file for clean_services
+
+- name: Remove services on Debian system
+  apt:
+    pkg: "{{ item }}"
+    state: absent
+    purge: true
+  loop: "{{ remove_services }}"

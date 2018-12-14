@@ -1,0 +1,351 @@
+#!/bin/bash
+
+######### ===== Instructions to install this program =====
+
+
+######### ===== END =====
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOR='\033[0m'
+YES="yes"
+NO="no"
+
+PRIVATE_CA_USER=root
+PRIVATE_CA_USER_GROUP=root
+PRIVATE_CA_BITS=2048
+PRIVATE_CA_MD=sha256
+PRIVATE_CA_DIR="/etc/ssl/default_private_ca"
+PRIVATE_CA_CONF_FILE="$PRIVATE_CA_DIR/openssl_ca.conf"
+PRIVATE_CA_NEW_CERTS_DIR="$PRIVATE_CA_DIR/newcerts"
+PRIVATE_CA_INDEX="$PRIVATE_CA_DIR/index.txt"
+PRIVATE_CA_SERIAL="$PRIVATE_CA_DIR/serial"
+PRIVATE_CA_KEY="$PRIVATE_CA_DIR/ca_key.pem"
+PRIVATE_CA_CERT="$PRIVATE_CA_DIR/ca_cert.pem"
+PRIVATE_CA_DEFAULT_DAYS=3650
+PRIVATE_CA_COUNTRY="FR"
+PRIVATE_CA_STATE="Rhone"
+PRIVATE_CA_LOCALITY="Lyon"
+PRIVATE_CA_ORGANISATION="Syscom"
+PRIVATE_CA_ORGANISATION_UNIT="IT"
+PRIVATE_CA_NAME="Authority Company Inc,"
+PRIVATE_CA_SUBJECT="/C=FR/ST=Rhone/L=Lyon/O=Syscom/CN=syscom.com"
+SUBJECT_TEMPLATE="/C=FR/ST=Rhone/L=Lyon/O=Syscom/CN="
+
+checkRoot() {
+   if ! [ $(id -u) -eq 0 ]; then
+   	echo -e "${RED}Only root user can run this program.${NO_COLOR}"
+   	exit 2
+   fi
+}
+
+show_dir() {
+	if [ $# -eq 0 ]; then
+   		echo "$Usage: $0 <directory absoluth path>" ;
+   		exit 1;
+	fi
+	DIR=$1
+	for entry in $DIR/*
+	do
+  		echo $entry
+	done
+}
+
+
+check_certificat_validity() {
+	if [ $# -eq 0 ]; then
+   		echo "$Usage: $0 <certificate_file absoluth path>" ;
+   		exit 1;
+	fi
+	FILE=$1
+	if [ ! -e $FILE ] ; then
+   		echo "Certificat file $1 does not exist."
+  		exit 2;
+	fi
+	EXPIRE_DATE=$(openssl x509 -in $FILE -noout -enddate | cut -f2 -d=);
+	EXPIRE_DATE_FORMAT=$(date --date="$EXPIRE_DATE" '+%Y%m%d')
+	EXPIRE_DATE_FORMAT_HUMAN=$(date --date="$EXPIRE_DATE" '+%d-%m-%Y')
+	TODAY_DATE_FORMAT=$(date '+%Y%m%d')
+	if [ $EXPIRE_DATE_FORMAT -ge $TODAY_DATE_FORMAT ]; then
+		echo -e "${GREEN}Expiration date is : $EXPIRE_DATE_FORMAT_HUMAN. Certificat is valid${NO_COLOR}"
+    	echo "1";
+	else
+		echo -e "${RED}Expiration date is : $EXPIRE_DATE_FORMAT_HUMAN. Certificat is invalid${NO_COLOR}"
+    	echo "0";
+	fi
+}
+
+
+verify_certificat() {
+	declare certificat
+	# 	declare shouldMakePause=0
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter absolut path of the certificat : " certificat
+	else
+		certificat=$1
+  		shift;
+  	fi
+  	check_certificat_validity $certificat
+  	pause
+}
+
+add_default_private_ca() {
+
+	declare checkValidity=0
+	declare createPrivateCa=0
+	echo "###################################################################################"
+	echo "Starting  create private authority"
+	echo "###################################################################################"
+
+  	if [ ! -d $PRIVATE_CA_DIR ]; then
+  		mkdir -p $PRIVATE_CA_DIR
+  		echo -e "${GREEN}Initialize private CA directory ($PRIVATE_CA_DIR) successfully${NO_COLOR}"
+  	fi
+
+  	if [ ! -d $PRIVATE_CA_NEW_CERTS_DIR ]; then
+  		mkdir -p $PRIVATE_CA_NEW_CERTS_DIR
+  		echo -e "${GREEN}Initialize private CA new certificats directory ($PRIVATE_CA_NEW_CERTS_DIR) successfully${NO_COLOR}"
+  	fi
+
+  	if [ ! -f $PRIVATE_CA_SERIAL ]; then
+  		echo '01' > $PRIVATE_CA_SERIAL
+  		echo -e "${GREEN}Initialize serial file ($PRIVATE_CA_SERIAL) successfully${NO_COLOR}"
+  	fi
+
+  	if [ ! -f $PRIVATE_CA_INDEX ]; then
+  		touch $PRIVATE_CA_INDEX
+  		echo -e "${GREEN}Initialize index file ($PRIVATE_CA_INDEX) successfully${NO_COLOR}"
+  	fi
+
+  	if [ ! -f $PRIVATE_CA_KEY ]; then
+  		openssl genrsa -out $PRIVATE_CA_KEY $PRIVATE_CA_BITS -rand file:/dev/random
+  		chmod 400 $PRIVATE_CA_KEY
+  		echo -e "${GREEN}Initialize private CA key file ($PRIVATE_CA_KEY) successfully${NO_COLOR}"
+  	fi
+
+  	if [ -f $PRIVATE_CA_CERT ]; then
+  		checkValidity=$(check_certificat_validity $PRIVATE_CA_CERT)
+  	fi
+
+  	if [ ! -f $PRIVATE_CA_CERT ] || [ $checkValidity -eq 0 ]; then
+  		openssl req -new -x509 -key $PRIVATE_CA_KEY -out $PRIVATE_CA_CERT -days $PRIVATE_CA_DEFAULT_DAYS -config "$PRIVATE_CA_CONF_FILE" -extensions v3_ca -subj "$PRIVATE_CA_SUBJECT"
+  		createPrivateCa=1
+  	fi
+
+  	if [ $createPrivateCa -eq 0 ]; then
+  		echo -e "${GREEN}Private Certificat Authority already exists.${NO_COLOR}"
+  	else
+  		echo -e "${GREEN}Private Certificat Authority has beean created successfully.${NO_COLOR}"
+  	fi
+
+  	pause
+}
+
+generate_certificat_request_to_ca_authority() {
+
+  echo "########   Starting  creating Certificat Sign Request for official authority  ########"
+  read -p "Country Name (2 letter code) [AU]:" countryCode
+  read -p "State or Province Name (full name) [Some-State]:" stateName
+  read -p "Locality Name (eg, Lyon/New-York/Dakar) []:" localityName
+  read -p "Organization Name (eg, company):" organisationName
+  read -p "Common Name. Enter exactly the DNS of your server (eg, wiki.domain1.org):" commonName
+  read -p "Email Address []:" emailAddress
+  read -p "Secure private key with passphrase (yes/no):" securePrivateKey
+  read -p "Confirm to generate CSR (yes/no) ? : " answer
+
+  if test "$answer" = "yes"; then
+    declare baseDirectory="/etc/ssl/$commonName"
+    declare passphraseFile="$baseDirectory/passphrase.txt"
+    declare passphraseScript="$baseDirectory/passphrase.sh"
+    declare privateKey="$baseDirectory/${commonName}_private_key.pem"
+    declare requestCsrFile="$baseDirectory/${commonName}_request.csr"
+    declare subject="/C=$countryCode/ST=$stateName/L=$localityName/O=$localityName/CN=$commonName"
+
+    if [ ! -d $baseDirectory ]; then
+      mkdir -p $baseDirectory
+      echo -e "${GREEN}Create successfully the base directory $baseDirectory.${NO_COLOR}"
+    fi
+
+    if test "$securePrivateKey" = "yes"; then
+      openssl rand -base64 48 > $passphraseFile && chmod 400 $passphraseFile
+      if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Generate successfully passphrase into $passphraseFile.${NO_COLOR}"
+      else
+        echo -e "${RED}Failed to generate  passphrase into $passphraseFile.${NO_COLOR}"
+        exit 1
+      fi
+
+      cp $PRIVATE_CA_DIR/passphrase.sh  $passphraseScript && chmod 0500  $passphraseScript
+      if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Create successfully script shell $passphraseScript to read $passphraseFile.${NO_COLOR}"
+      else
+        echo -e "${RED}Failed to create script shell $passphraseScript.${NO_COLOR}"
+        exit 1
+      fi
+    fi
+
+    if test "$securePrivateKey" = "yes"; then
+      openssl genrsa -des3 -passout file:"$passphraseFile" -out "$privateKey" 2048 -rand file:/dev/random && chmod 400 "$privateKey"
+    else
+      openssl genrsa -out "$privateKey" 2048 -rand file:/dev/random && chmod 400 "$privateKey"
+    fi
+
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}Generate and secure successfully private key file : $privateKey.${NO_COLOR}"
+    else
+      echo -e "${RED}Failed to generate and secure successfully private key file : $privateKey.${NO_COLOR}"
+      exit 1
+    fi
+
+
+    if test "$securePrivateKey" = "yes"; then
+      openssl req -new -passin file:"$passphraseFile" -key "$privateKey" -out "$requestCsrFile" -subj "$subject"
+    else
+      openssl req -new -key "$privateKey" -out "$requestCsrFile" -subj "$subject"
+    fi
+
+    if [ $? -eq 0 ]; then
+      echo -e "${GREEN}Generate Certificat Sign Request file (CSR) : $requestCsrFile.${NO_COLOR}"
+      echo -e "${GREEN}All files you need are in this directory : $baseDirectory.${NO_COLOR}"
+    else
+      echo -e "${RED}Failed to generate Certificat Sign Request file (CSR) : $requestCsrFile.${NO_COLOR}"
+      exit 1
+    fi
+  fi
+  pause
+
+}
+
+add_auto_signed_certificat() {
+	declare commonName
+
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter the server URL (e.g., myaddress.dyndns.org) : " commonName
+	else
+		commonName=$1
+  		shift;
+  	fi
+
+ 	echo "########   Starting  creating self-signed certificat for the server URL : $domaine  ########"
+
+	declare baseDirectory="/etc/ssl/$commonName"
+	declare passphraseFile="$baseDirectory/passphrase.txt"
+	declare passphraseScript="$baseDirectory/passphrase.sh"
+	declare privateKey="$baseDirectory/${commonName}_private_key.pem"
+	declare certificatFile="$baseDirectory/${commonName}_cert.pem"
+	declare requestCsrFile="$baseDirectory/${commonName}_request.pem"
+	declare subject="$SUBJECT_TEMPLATE$commonName"
+
+	if [ ! -d $baseDirectory ]; then
+  	mkdir -p $baseDirectory
+  	echo -e "${GREEN}Create successfully the base directory $baseDirectory.${NO_COLOR}"
+  fi
+
+	openssl rand -base64 48 > $passphraseFile && chmod 400 $passphraseFile
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Generate successfully passphrase into $passphraseFile.${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to generate  passphrase into $passphraseFile.${NO_COLOR}"
+		exit 1
+	fi
+
+	cp $PRIVATE_CA_DIR/passphrase.sh  $passphraseScript && chmod 0500  $passphraseScript
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Create successfully script shell $passphraseScript to read $passphraseFile.${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to create script shell $passphraseScript.${NO_COLOR}"
+		exit 1
+	fi
+
+	openssl genrsa -des3 -passout file:"$passphraseFile" -out "$privateKey" 2048 -rand file:/dev/random && chmod 400 "$privateKey"
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Generate and secure successfully private key file : $privateKey.${NO_COLOR}"
+	else
+		echo -e "${RED} to generate and secure successfully private key file : $privateKey.${NO_COLOR}"
+		exit 1
+	fi
+
+	openssl req -new -passin file:"$passphraseFile" -key "$privateKey" -out "$requestCsrFile" -subj "$subject" -config "$PRIVATE_CA_CONF_FILE"
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Generate Certificat Sign Request file (CSR) : $requestCsrFile.${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to generate Certificat Sign Request file (CSR) : $requestCsrFile.${NO_COLOR}"
+		exit 1
+	fi
+
+	openssl ca -batch -notext -out "$certificatFile" -config "$PRIVATE_CA_CONF_FILE"  -infiles "$requestCsrFile"
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Auto-sign certificat successfully for the domain $domain.${NO_COLOR}"
+	echo -e "${GREEN}All files are present into the directory $baseDirectory.${NO_COLOR}"
+	show_dir $baseDirectory
+	else
+		echo -e "${RED}Failed to Auto-sign certificat.${NO_COLOR}"
+		exit 1
+	fi
+
+	echo "########   END   ########"
+	pause
+}
+
+
+menus() {
+	clear
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo "  SSL TOOLS - M A I N  M E N U  "
+	echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	echo "1. Create private authority certificat"
+	echo "2. Create self-signed certificat"
+	echo "3. Generate Certificat Request for official authority"
+	echo "4. Check certificat validity"
+	echo "7. Exit"
+}
+
+read_options() {
+	local choice
+	read -p "Enter choice [ 1 - 7] " choice
+	case $choice in
+		1) add_default_private_ca ;;
+		2) add_auto_signed_certificat ;;
+		3) generate_certificat_request_to_ca_authority ;;
+		4) verify_certificat ;;
+		7) exit 0 ;;
+		*) echo -e "${RED}Error...${NO_COLOR}" && sleep 2
+	esac
+}
+
+pause(){
+  read -p "Press [Enter] key to continue..." fackEnterKey
+}
+
+
+# Run as root, of course.
+checkRoot
+
+
+# ----------------------------------------------
+# Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGINT SIGQUIT SIGTSTP
+
+# -----------------------------------
+# Main logic - infinite loop
+# ------------------------------------
+while true
+do
+	menus
+	read_options
+done
+
+
+# TODO
+# 1°) Générer/renouveler automatiquement un certificat signés avec let encrypt :: TODO. À faire quand j'aurai un DNS valide en ligne
+# 2°) Renouveler un certificat qui arrive à expiration.
+# 3°) Importer une autorité de certificat dans un JDK
+
+
+# https://www.memoinfo.fr/tutoriels-linux/configurer-lets-encrypt-apache/
+# https://www.google.fr/search?q=ssl+certificats+automatically+by+a+bash&oq=ssl+certificats+automatically+by+a+bash&aqs=chrome..69i57.13143j0j4&sourceid=chrome&ie=UTF-8
+# https://mycyberuniverse.com/linux/ssl-certificate-automatically-by-a-bash-script.html
+# https://computingforgeeks.com/bash-script-to-auto-renew-letsencrypt-ssl-certificate-on-tomcat/
+# https://gist.github.com/ssbarnea/3833453
+# https://alexnogard.com/bash-scripting-creation-create-vhosts-automatises-automated-certificat-lets-encrypt/

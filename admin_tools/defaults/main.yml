@@ -1,0 +1,6 @@
+---
+# defaults file for admin_tools
+admin_tools_files:
+  - { src: 'pg_tools', dest: '/usr/local/bin/pg_tools' }
+  - { src: 'ssh_key_tools', dest: '/usr/local/bin/ssh_key_tools' }
+  - { src: 'user_tools', dest: '/usr/local/bin/user_tools' }

@@ -1,0 +1,282 @@
+#!/bin/bash
+
+######### ===== Instructions to install this program =====
+# 1°) Copy file into this directory :
+# 	cp pg_tools /usr/local/bin/pg_tools
+# 	chmod 755 /usr/local/bin/pg_tools
+
+# You can call command pg_tools in your shell as user root
+
+######### ===== END =====
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NO_COLOR='\033[0m'
+YES="yes"
+NO="no"
+
+checkRoot() {
+   if ! [ $(id -u) -eq 0 ]; then
+   	echo -e "${RED}Only root user can run this program.${NO_COLOR}"
+   	exit 2
+   fi
+}
+
+find_pg_user() {
+	[ $# -eq 0 ] && echo "User name is mandatory!" && exit 1
+	username=$1
+  	shift;
+	local myresult=$(sudo -u postgres psql -X -P t -P format=unaligned -c "SELECT count(*) FROM pg_user WHERE usename='$username'")
+	echo "$myresult"
+}
+
+add_pg_user() {
+
+	echo "###################################################################################"
+	echo "Starting  Add Postgres user......."
+	echo "###################################################################################"
+
+	declare shouldMakePause=0
+
+	if ! [ $# -eq 3 ] ; then
+		read -p "Enter postgres username : " username
+		read -s -p "Enter password : " password
+		echo
+		read -p "Give super-user right to this user ($YES/$NO) ? : " superuser
+	else
+		username=$1
+  		password=$2
+  		superuser=$3
+  		shift; shift; shift;
+  		shouldMakePause=1
+  	fi
+
+  	declare pg_right="CREATEDB"
+  	declare request
+
+  	if test "$superuser" = "yes"; then
+		pg_right="$pg_right SUPERUSER"
+	fi
+
+	finduser=$(sudo -u postgres psql -X -P t -P format=unaligned -c "SELECT count(*) FROM pg_user WHERE usename='$username'")
+
+
+	if [ $finduser -ge 1 ] ; then
+		sudo -u postgres psql -c "ALTER ROLE $username $pg_right;"
+		sudo -u postgres psql -c "ALTER ROLE  $username WITH PASSWORD '$password';"
+	else
+		sudo -u postgres psql -c "CREATE USER $username LOGIN password '$password' $pg_right;"
+	fi
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Postgres user $username has been successfully created/updated !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to add/update Postgres user $username. Exit !${NO_COLOR}"
+	fi
+
+	if [ $shouldMakePause -eq 1 ] ; then
+		pause
+	fi
+}
+
+
+drop_pg_user() {
+
+	echo "###################################################################################"
+	echo "Starting  Drop Postgres user......."
+	echo "###################################################################################"
+
+	declare shouldMakePause=0
+
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter postgres username : " username
+		shouldMakePause=1
+	else
+		username=$1
+  		shift;
+  	fi
+
+	# Drop all schema belong to user
+ 	findschemas=$(sudo -u postgres psql -X -P t -P format=unaligned -c "SELECT schema_name FROM information_schema.schemata where schema_owner='$username'")
+
+	echo $findschemas
+
+	# TODO Drop all databases belong to user
+	# TODO Drop user
+
+	if [ $shouldMakePause -eq 1 ] ; then
+		pause
+	fi
+}
+
+
+find_pg_database() {
+	[ $# -eq 0 ] && echo "Database name is mandatory!" && exit 1
+	database=$1
+  	shift;
+	local myresult=$(sudo -u postgres psql -X -P t -P format=unaligned -c "SELECT count(*) FROM pg_database WHERE datname='$database'")
+	echo "$myresult"
+}
+
+
+add_pg_database() {
+	declare shouldMakePause=0
+	if ! [ $# -eq 2 ] ; then
+		read -p "Enter database name : " database
+		read -p "Enter database owner name : " owner
+		shouldMakePause=1;
+	else
+		database=$1
+  		owner=$2
+  		shift; shift;
+  	fi
+	echo "########   Starting  add Postgres database $database with owner=$owner.  ########"
+
+	finduser=$(find_pg_user $owner)
+
+	if [ $finduser -eq 0 ] ; then
+		echo "Unknown user $owner. Creating user $owner with password $owner."
+		add_pg_user $owner $owner $NO
+	fi
+
+	finddatabase=$(find_pg_database $database)
+
+	if [ $finddatabase -eq 0 ] ; then
+		sudo -u postgres psql -c "CREATE DATABASE $database OWNER=$owner;"
+	else
+		sudo -u postgres psql -c "ALTER DATABASE $database OWNER TO $owner;"
+	fi
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Database $database with owner $owner has been added/updated successfully !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to add/update database $database !${NO_COLOR}"
+	fi
+
+	if [ $shouldMakePause -eq 1 ] ; then
+		pause
+	fi
+}
+
+drop_pg_database() {
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter database name : " database
+	else
+		database=$1
+  		shift;
+  	fi
+	echo "########   Starting Drop Postgres database $database.  ########"
+
+  	sudo -u postgres psql -c "DROP DATABASE $database;"
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Database $database has been dropped successfully !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to drop database $database !${NO_COLOR}"
+	fi
+	pause
+}
+
+
+add_pg_schema() {
+	if ! [ $# -eq 2 ] ; then
+		read -p "Enter database name : " database
+		read -p "Enter schema name : " schema
+		read -p "Enter schema owner : " owner
+	else
+		database=$1
+  		schema=$2
+  		owner=$3
+  		shift; shift; shift;
+  	fi
+	echo "########   Starting  add Postgres schema $schema in database=$database.  ########"
+
+  	finddatabase=$(find_pg_database $database)
+
+	if [ $finddatabase -eq 0 ] ; then
+		add_pg_database $database $owner
+	fi
+
+  	sudo -u postgres psql -d $database -c "SET SEARCH_PATH TO $database; CREATE SCHEMA $schema AUTHORIZATION $owner;"
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Schema $schema in database=$database/owner=$owner has been added successfully !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to add schema $schema !${NO_COLOR}"
+	fi
+	pause
+}
+
+drop_pg_schema() {
+	if ! [ $# -eq 1 ] ; then
+		read -p "Enter schema name : " schema
+		read -p "Enter database name : " database
+	else
+		schema=$1
+		database=$2
+  		shift; shift;
+  	fi
+	echo "########   Starting Drop Postgres schema $schema.  ########"
+
+  	sudo -u postgres psql -d $database -c "SET SEARCH_PATH TO $database; DROP SCHEMA $schema CASCADE;"
+
+	if [ $? -eq 0 ]; then
+		echo -e "${GREEN}Schema $schema has been dropped successfully !${NO_COLOR}"
+	else
+		echo -e "${RED}Failed to drop schema $schema !${NO_COLOR}"
+	fi
+	pause
+}
+
+
+menus() {
+	clear
+	echo "~~~~~~~~~~~~~~~~~~~~~"
+	echo "POSTGRES TOOLS - M A I N  M E N U"
+	echo "~~~~~~~~~~~~~~~~~~~~~"
+	echo "1. Create Postgres User"
+	echo "2. Create Postgres Database"
+	echo "3. Create Postgres Schema"
+	echo "4. Drop Postgres User"
+	echo "5. Drop Postgres Database"
+	echo "6. Drop Postgres Schema"
+	echo "7. Exit"
+}
+
+read_options() {
+	local choice
+	read -p "Enter choice [ 1 - 7] " choice
+	case $choice in
+		1) add_pg_user ;;
+		2) add_pg_database ;;
+		3) add_pg_schema ;;
+		4) drop_pg_user ;;
+		5) drop_pg_database ;;
+		6) drop_pg_schema ;;
+		7) exit 0 ;;
+		*) echo -e "${RED}Error...${NO_COLOR}" && sleep 2
+	esac
+}
+
+pause(){
+  read -p "Press [Enter] key to continue..." fackEnterKey
+}
+
+
+# Run as root, of course.
+# checkRoot
+
+
+# ----------------------------------------------
+# Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGINT SIGQUIT SIGTSTP
+
+# -----------------------------------
+# Main logic - infinite loop
+# ------------------------------------
+while true
+do
+	menus
+	read_options
+done

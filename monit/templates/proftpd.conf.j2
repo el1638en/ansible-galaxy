@@ -1,0 +1,5 @@
+check process proftpd with pidfile /var/run/proftpd.pid
+start program = "{{ monit_proftp_start_command }}"
+stop program = "{{ monit_proftp_stop_command }}"
+if failed port 21 protocol ftp then restart
+if 5 restarts within 5 cycles then timeout

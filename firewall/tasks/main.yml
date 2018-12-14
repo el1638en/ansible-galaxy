@@ -1,0 +1,31 @@
+---
+# tasks file for firewall
+
+- name: Install iptables package.
+  apt:
+    pkg: iptables
+    state: present
+
+- name: Flush iptables the first time playbook runs.
+  command: >
+    iptables -F
+    creates=/etc/firewall.bash
+
+- name: Copy firewall files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop: "{{ firewall_script_files }}"
+
+- name: Reload systemd configuration
+  systemd:
+    daemon-reload: true
+
+- name: Enable firewall service
+  systemd:
+    name: firewall
+    enabled: true
+    state: started

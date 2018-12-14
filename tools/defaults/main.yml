@@ -1,0 +1,18 @@
+---
+# defaults file for tools
+
+# Liste des outils à installer
+tools_list:
+  - git
+  - vim
+  - curl
+  - openssl
+  - sudo
+  - sshpass
+  - python-pip
+  - certbot
+
+# Liste des package python
+tools_python:
+  - virtualenv
+  - virtualenvwrapper

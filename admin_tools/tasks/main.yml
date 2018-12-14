@@ -1,0 +1,11 @@
+---
+# tasks file for admin_tools
+
+- name: Copy configuration files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0755
+  loop: "{{ admin_tools_files }}"
