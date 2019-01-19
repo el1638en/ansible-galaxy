@@ -1,0 +1,13 @@
+<VirtualHost *:{{ sonarqube_reverse_proxy_http_default_port }}>
+	{% if sonarqube_reverse_proxy_server_name != "" %}
+	ServerName {{ sonarqube_reverse_proxy_server_name }}
+	{% endif %}
+	RewriteEngine On
+    LogLevel alert rewrite:trace2
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+    CustomLog "|/usr/bin/rotatelogs /var/log/apache2/rewrite_sonarqube_%Y%m%d.log 86400" combined
+
+    RewriteRule ^/$ http://{{ sonarqube_host }}:{{ sonarqube_web_port }}/ [P]
+    RewriteRule ^/(.*)$ http://{{ sonarqube_host }}:{{ sonarqube_web_port }}/$1 [P]
+    ProxyPassReverse / http://{{ sonarqube_host }}:{{ sonarqube_web_port }}/
+</VirtualHost>

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+generate_ssh_keys() {
+	local comment=""
+	local passphrase=""
+	echo "######################################################"
+	echo "Starting  generate ssh keys..."
+	echo "######################################################"
+	cd ~
+	read -s -p "Enter passphrase(empty for no passphrase) : " passphrase
+	echo
+	read -p "Enter custom comment for ssh keys(empty for no comment) : " comment
+	ssh-keygen -t rsa -b 4096 -C "$comment" -P "$passphrase" -f ~/.ssh/id_rsa -q
+	pause
+}
+
+export_ssh_public_key() {
+	read -p "Enter username on the server : " username
+	read -p "Enter Host IP or hostname of the server : " host
+	ssh-copy-id -i ~/.ssh/id_rsa.pub $username@$host
+	pause
+}
+
+menus() {
+	clear
+	echo "~~~~~~~~~~~~~~~~~~~~~"	
+	echo " M A I N - M E N U"
+	echo "~~~~~~~~~~~~~~~~~~~~~"
+	echo "1. Generate SSH keys(private & public)"
+	echo "2. Export SSH public key to server"
+	echo "3. Exit"
+}
+
+read_options() {
+	local choice
+	read -p "Enter choice [ 1 - 3] " choice
+	case $choice in
+		1) generate_ssh_keys ;;
+		2) export_ssh_public_key ;;
+		3) exit 0 ;;
+		*) echo -e "${RED}Error...${NO_COLOR}" && sleep 2
+	esac
+}
+
+pause(){
+  read -p "Press [Enter] key to continue..." fackEnterKey
+}
+
+
+# ----------------------------------------------
+# Trap CTRL+C, CTRL+Z and quit singles
+# ----------------------------------------------
+trap '' SIGINT SIGQUIT SIGTSTP
+ 
+# -----------------------------------
+# Main logic - infinite loop
+# ------------------------------------
+while true
+do
+	menus
+	read_options
+done

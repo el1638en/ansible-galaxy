@@ -1,0 +1,12 @@
+---
+# tasks file for apache2
+
+- include_tasks: install.yml
+
+- include_tasks: config.yml
+
+- include_tasks: modsecurity.yml
+
+- include_tasks: status.yml
+  notify:
+    - Restart apache2

@@ -1,0 +1,5 @@
+check process sshd with pidfile /var/run/sshd.pid
+start program = "{{ monit_sshd_start_command }}"
+stop program = "{{ monit_sshd_stop_command }}"
+if failed host localhost port 22 protocol ssh then restart
+if 5 restarts within 5 cycles then timeout

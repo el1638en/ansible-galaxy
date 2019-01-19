@@ -1,0 +1,23 @@
+---
+# tasks file for openjdk
+
+- name: Install openjdk package
+  apt:
+    name: "{{ openjdk_package }}"
+    state: present
+
+- name: Define JAVA_HOME variable for 32 bits machine
+  lineinfile:
+    path: /etc/environment
+    line: 'JAVA_HOME="/usr/lib/jvm/{{ openjdk_java_home }}-i386"'
+    owner: root
+    group: root
+  when: "ansible_userspace_bits == '32'"
+
+- name: Define JAVA_HOME variable for 64 bits machine
+  lineinfile:
+    path: /etc/environment
+    line: 'JAVA_HOME="/usr/lib/jvm/{{ openjdk_java_home }}-amd64"'
+    owner: root
+    group: root
+  when: "ansible_userspace_bits == '64'"

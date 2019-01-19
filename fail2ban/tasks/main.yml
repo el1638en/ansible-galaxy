@@ -1,0 +1,13 @@
+---
+# tasks file for fail2ban
+
+- name: Install fail2ban package
+  apt:
+    pkg: fail2ban
+    state: present
+
+- name: Start fail2ban service
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: true

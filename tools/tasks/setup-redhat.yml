@@ -1,0 +1,8 @@
+---
+# tasks file to install tools on RedHat OS family .
+
+- name: Install tools on system
+  yum:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ tools_list }}"

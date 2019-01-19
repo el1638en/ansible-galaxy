@@ -1,0 +1,22 @@
+---
+# tasks file for sonarqube
+
+- name: Check sonarqube home directory exists
+  stat:
+    path: "{{ sonarqube_home }}"
+  register: sonarqube_home_result
+
+- include_tasks: install.yml
+  when: not sonarqube_home_result.stat.exists
+
+- include_tasks: iptables.yml
+  when: sonarqube_iptables_enabled
+
+- include_tasks: reverse_proxy.yml
+  when: sonarqube_reverse_proxy_enabled
+
+- name: Restart apache2
+  command: echo "Restart apache2"
+  notify:
+    - Restart apache2
+  when: sonarqube_reverse_proxy_enabled

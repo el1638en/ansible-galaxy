@@ -1,0 +1,21 @@
+---
+# defaults file for nexus
+nexus_user: nexus
+nexus_group: nexus
+nexus_user_password: nexus
+nexus_install_directory: "/home/nexus"
+nexus_version: "2.14.3-02"
+nexus_archive_name: "nexus-{{ nexus_version }}-bundle.tar.gz"
+nexus_download_archive_url: "https://download.sonatype.com/nexus/oss/{{ nexus_archive_name }}"
+nexus_home: "{{ nexus_install_directory }}/nexus-{{ nexus_version }}"
+nexus_port: 9081
+nexus_host: 192.168.1.21
+nexus_network_interface: "eth0"
+nexus_iptables_enabled: False
+nexus_files : 
+    - { src: "nexus.properties.j2", dest: "{{ nexus_home }}/conf/nexus.properties" }
+    - { src: "nexus.sh.j2", dest: "{{ nexus_home }}/bin/nexus" }
+
+nexus_reverse_proxy_enabled: False
+nexus_reverse_proxy_http_default_port: 80
+nexus_reverse_proxy_server_name:

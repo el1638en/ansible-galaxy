@@ -1,0 +1,4 @@
+---
+# defaults file for postgres_instance
+postgres_instance_dbs:
+ - { db_user: "apps", db_password: "apps", db_user_roles: "CREATEDB", db_name: "apps", db_schema: "apps" }

@@ -1,0 +1,8 @@
+---
+# tasks file to install tools on debian OS family.
+
+- name: Install tools on Debian system
+  apt:
+    pkg: "{{ item }}"
+    state: latest
+  loop: "{{ tools_list }}"

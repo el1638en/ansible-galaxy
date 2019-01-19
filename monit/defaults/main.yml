@@ -1,0 +1,63 @@
+---
+# defaults file for monit
+monit_package: monit
+monit_daemon: 60
+monit_config_file: "/etc/monit/monitrc"
+monit_send_alert_mail: true
+monit_mail_server: localhost
+monit_mail_address: root@localhost
+monit_port: 2812
+monit_admin_login: "admin"
+monit_admin_password: "admin"
+# monit_admin_login: !vault |
+#           $ANSIBLE_VAULT;1.1;AES256
+#           38363638303531393763656532333966303865376663383238653438336133313931613165333264
+#           3830646564376532633132653131396136363631376361360a623630613936613663366535323138
+#           61383035373136313035636636306531303135653035396435366264373530656661653735633431
+#           3433643961316363610a343039333733343934393035633864656639636539653962336464636335
+#           6633
+# monit_admin_password: !vault |
+#           $ANSIBLE_VAULT;1.1;AES256
+#           38363638303531393763656532333966303865376663383238653438336133313931613165333264
+#           3830646564376532633132653131396136363631376361360a623630613936613663366535323138
+#           61383035373136313035636636306531303135653035396435366264373530656661653735633431
+#           3433643961316363610a343039333733343934393035633864656639636539653962336464636335
+#           6633
+
+# Apache
+monit_apache2_enabled: false
+monit_apache2_config_file: "/etc/monit/conf.d/apache2.conf"
+monit_apache2_pid_file: "/run/apache2/apache2.pid"
+monit_apache2_stop_command: "/bin/systemctl stop apache2.service"
+monit_apache2_start_command: "/bin/systemctl start apache2.service"
+
+# postgres
+monit_postgres_enabled: false
+monit_postgres_port: 5432
+monit_postgres_version: 9.6
+monit_postgres_config_file: "/etc/monit/conf.d/postgresql.conf"
+monit_postgres_stop_command: "/bin/systemctl stop postgresql.service"
+monit_postgres_start_command: "/bin/systemctl start postgresql.service"
+
+
+# proftpd
+monit_proftp_enabled: false
+monit_proftp_config_file: "/etc/monit/conf.d/proftpd.conf"
+monit_proftp_stop_command: "/bin/systemctl stop proftpd.service"
+monit_proftp_start_command: "/bin/systemctl start proftpd.service"
+
+# sshd
+monit_sshd_enabled: true
+monit_sshd_config_file: "/etc/monit/conf.d/sshd.conf"
+monit_sshd_stop_command: "/bin/systemctl stop sshd.service"
+monit_sshd_start_command: "/bin/systemctl start sshd.service"
+
+# tomcat
+monit_tomcat_enabled: false
+monit_tomcat_http_port: 8080
+monit_tomcat_config_file: "/etc/monit/conf.d/tomcat.conf"
+monit_tomcat_stop_command: "/bin/systemctl stop tomcat.service"
+monit_tomcat_start_command: "/bin/systemctl start tomcat.service"
+
+# Encrypted password with ansible vault : https://utux.fr/index.php?article141/ansible-vault
+# Example : ansible-vault encrypt_string 'password' --name 'admin_login'

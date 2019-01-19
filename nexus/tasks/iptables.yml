@@ -1,0 +1,15 @@
+---
+# Iptables tasks
+
+- name: Add Iptables Input trafic rule for Nexus
+  iptables:
+    action: insert
+    chain: INPUT
+    protocol: tcp
+    ctstate: NEW,ESTABLISHED
+    match: tcp
+    in_interface: "{{ nexus_network_interface }}"
+    destination_port: "{{ nexus_port }}"
+    jump: ACCEPT
+    state: present
+    comment: "TCP - Nexus Input trafic"

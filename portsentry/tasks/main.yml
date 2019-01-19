@@ -1,0 +1,17 @@
+---
+# tasks file for portsentry
+
+- name: Install portsentry
+  apt:
+    pkg: "{{ portsentry_package }}"
+    state: present
+
+- name: Copy portsentry configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop: "{{ portsentry_files }}"
+  notify: Restart portsentry

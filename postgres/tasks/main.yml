@@ -1,0 +1,14 @@
+---
+# tasks file for postgres
+- name: Installer PostgreSQL
+  apt:
+    pkg: "{{ item }}"
+    state: present
+  loop:
+    - "{{ postgres_server_pkg }}"
+    - "{{ postgres_client_pkg }}"
+
+- name: Start postgresql service
+  systemd:
+    name: postgresql
+    state: started

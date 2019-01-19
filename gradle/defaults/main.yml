@@ -1,0 +1,13 @@
+---
+# defaults file for gradle
+
+# Version de Gradle
+gradle_version: "5.0"
+# Nom de l'archive .zip
+gradle_archive_name: "gradle-{{ gradle_version }}-all.zip"
+# Url de téléchargement de l'archive
+gradle_download_archive_url: "https://services.gradle.org/distributions/{{ gradle_archive_name }}"
+# Répertoire d'installation
+gradle_install_directory: "/opt/gradle"
+# Adresse absolue du répertoire de la version courante de Gradle
+gradle_home: "{{ gradle_install_directory }}/gradle-{{ gradle_version }}"

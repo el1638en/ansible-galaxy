@@ -1,0 +1,81 @@
+---
+# tasks file for ssh
+
+# https://www.ssi.gouv.fr/uploads/2014/01/NT_OpenSSH.pdf. Rule R2 & R3
+- name: Delete obsolete packages (Telnet, Rsh and Rlogin)
+  package:
+    pkg: "{{ item }}"
+    state: absent
+  loop: "{{ ssh_delete_packages }}"
+
+- name: Init banner file with little information
+  lineinfile:
+    path: "{{ item }}"
+    line: "{{ ssh_banner_information }}"
+    state: present
+  loop: "{{ ssh_issue_files }}"
+
+- name: Init motd file with warning message
+  copy:
+    src: motd
+    dest: "{{ ssh_motd_file }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Init timeout for unactive user
+  blockinfile:
+    dest: "{{ ssh_profile_file }}"
+    insertafter: EOF
+    block: |
+        TMOUT={{ ssh_tmout }}
+        HISTSIZE={{ ssh_histsize }}
+        HISTFILESIZE={{ ssh_histfilesize }}
+        export TMOUT HISTSIZE HISTFILESIZE
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install openssh-server package
+  package:
+    pkg: "{{ ssh_package }}"
+    state: present
+
+- name: Change the banner
+  copy:
+    src: banner
+    dest: "{{ ssh_banner_file }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Change the config of ssh
+  lineinfile:
+    path: "{{ ssh_config_file }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.value }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: present
+  loop: "{{ ssh_config }}"
+  notify: Restart ssh
+
+# https://www.ssi.gouv.fr/uploads/2014/01/NT_OpenSSH.pdf. Rule R15
+- name: Add ETM encrypt for ssh version >=6.3
+  lineinfile:
+    path: "{{ ssh_config_file }}"
+    line: "{{ ssh_macs_etm }}"
+    owner: root
+    group: root
+    mode: 0644
+  when: ssh_version >= ssh_version_support_etm
+
+- name: Add hmac-sha1 for ssh version < 6.3
+  lineinfile:
+    path: "{{ ssh_config_file }}"
+    line: "{{ ssh_macs_old }}"
+    owner: root
+    group: root
+    mode: 0644
+  when: ssh_version < ssh_version_support_etm

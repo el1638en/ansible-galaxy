@@ -1,0 +1,128 @@
+#!/bin/bash
+# iptables firewall.
+#
+# Common port reference:
+#   22: SSH
+#   25: SMTP
+#   80: HTTP
+#   123: NTP
+#   443: HTTPS
+#   4949: Munin
+#   6082: Varnish admin
+#   8080: HTTP alternate (often used with Tomcat)
+#   8983: Tomcat HTTP
+#   8443: Tomcat HTTPS
+#   9000: SonarQube
+#
+# Eric LEGBA
+
+IPTABLES=/sbin/iptables
+
+# No spoofing.
+if [ -e /proc/sys/net/ipv4/conf/all/rp_filter ]
+then
+for filter in /proc/sys/net/ipv4/conf/*/rp_filter
+do
+echo 1 > $filter
+done
+fi
+
+# Completely reset the firewall by removing all rules and chains.
+$IPTABLES -P INPUT ACCEPT
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+$IPTABLES -t nat -F
+$IPTABLES -t mangle -F
+$IPTABLES -F
+$IPTABLES -X
+
+# Accept traffic from loopback interface (localhost).
+$IPTABLES -A INPUT -i lo -j ACCEPT
+
+# Forwarded ports.
+{# Add a rule for each forwarded port #}
+{% for forwarded_port in firewall_forwarded_ports %}
+$IPTABLES -t nat -I PREROUTING -p {{ forwarded_port.protocol }} --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+$IPTABLES -t nat -I OUTPUT -p {{ forwarded_port.protocol }} -o lo --dport {{ forwarded_port.src }} -j REDIRECT --to-port {{ forwarded_port.dest }}
+{% endfor %}
+
+# Open ports.
+{# Add a rule for each open port #}
+{% for allow_input_port in firewall_allowed_ports %}
+$IPTABLES -A INPUT -p {{ allow_input_port.protocol }} -m {{ allow_input_port.protocol }} --dport {{ allow_input_port.port }} -m comment --comment "{{ allow_input_port.comment }}" -j ACCEPT
+{% endfor %}
+
+
+# Accept icmp ping requests.
+$IPTABLES -A INPUT -p icmp -j ACCEPT
+
+# Allow NTP traffic for time synchronization.
+$IPTABLES -A OUTPUT -p udp --dport 123 -j ACCEPT
+$IPTABLES -A INPUT -p udp --sport 123 -j ACCEPT
+
+# Additional custom rules.
+{% for rule in firewall_additional_rules %}
+{{ rule }}
+{% endfor %}
+
+# Allow established connections:
+$IPTABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Log EVERYTHING (ONLY for Debug).
+$IPTABLES -A INPUT -j LOG
+
+{% if firewall_log_dropped_packets %}
+# Log other incoming requests (all of which are dropped) at 15/minute max.
+$IPTABLES -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
+{% endif %}
+
+# Drop all other traffic.
+$IPTABLES -A INPUT -j DROP
+
+
+# Configure IPv6 if ip6tables is present.
+
+if [ -x "$(which $IP6TABLES 2>/dev/null)" ]; then
+
+  $IP6TABLES=/sbin/ip6tables
+  # Remove all rules and chains.
+  $IP6TABLES -F
+  $IP6TABLES -X
+
+  # Accept traffic from loopback interface (localhost).
+  $IP6TABLES -A INPUT -i lo -j ACCEPT
+
+  # Open ports.
+  {# Add a rule for each open port #}
+  {% for allow_input_port in firewall_allowed_ports %}
+  $IP6TABLES -A INPUT -p {{ allow_input_port.protocol }} -m {{ allow_input_port.protocol }} --dport {{ allow_input_port.port }} -j ACCEPT -m comment --comment "{{ allow_input_port.comment }}"
+  {% endfor %}
+  
+
+  # Accept icmp ping requests.
+  $IP6TABLES -A INPUT -p icmp -j ACCEPT
+
+  # Allow NTP traffic for time synchronization.
+  $IP6TABLES -A OUTPUT -p udp --dport 123 -j ACCEPT
+  $IP6TABLES -A INPUT -p udp --sport 123 -j ACCEPT
+
+  # Additional custom rules.
+  {% for rule in firewall_ip6_additional_rules %}
+  {{ rule }}
+  {% endfor %}
+
+  # Allow established connections:
+  $IP6TABLES -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+  # Log EVERYTHING (ONLY for Debug).
+  # $IP6TABLES -A INPUT -j LOG
+
+  {% if firewall_log_dropped_packets %}
+  # Log other incoming requests (all of which are dropped) at 15/minute max.
+  $IP6TABLES -A INPUT -m limit --limit 15/minute -j LOG --log-level 7 --log-prefix "Dropped by firewall: "
+  {% endif %}
+
+  # Drop all other traffic.
+  $IP6TABLES -A INPUT -j DROP
+
+fi

@@ -1,0 +1,12 @@
+---
+# handlers file for sonarqube
+
+- name: Restart SonarQube
+  systemd:
+    name: sonar
+    state: restarted
+
+- name: Restart apache2
+  systemd:
+    name: apache2
+    state: restarted

@@ -1,0 +1,9 @@
+---
+# defaults file for clean_services
+# Liste des applications à supprimer
+remove_services:
+  - nfs-common
+  - inetd
+  - portmap
+  - ppp
+  - exim4

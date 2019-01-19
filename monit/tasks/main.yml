@@ -1,0 +1,38 @@
+---
+# tasks file for monit
+
+- name: Install monit package
+  apt:
+    pkg: "{{ monit_package }}"
+    state: present
+
+- name: Install iptables package
+  apt:
+    pkg: iptables
+    state: present
+
+- name: Copy configuration file
+  template:
+    src: monit.conf.j2
+    dest: "{{ monit_config_file }}"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Copy configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - { src: "apache.conf.j2", dest: "{{ monit_apache2_config_file }}", enabled: "{{ monit_apache2_enabled }}" }
+    - { src: "postgresql.conf.j2", dest: "{{ monit_postgres_config_file }}", enabled: "{{ monit_postgres_enabled }}" }
+    - { src: "proftpd.conf.j2", dest: "{{ monit_proftp_config_file }}", enabled: "{{ monit_proftp_enabled }}" }
+    - { src: "sshd.conf.j2", dest: "{{ monit_sshd_config_file }}", enabled: "{{ monit_sshd_enabled }}" }
+    - { src: "tomcat.conf.j2", dest: "{{ monit_tomcat_config_file }}", enabled: "{{ monit_tomcat_enabled }}" }
+  when: "{{ item.enabled }}"
+  notify: Reload monit
+
+- include_tasks: iptables.yml

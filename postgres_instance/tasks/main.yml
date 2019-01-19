@@ -1,0 +1,44 @@
+---
+# tasks file for postgres_instance
+- name: Install python-psycopg2
+  apt:
+    pkg: python-psycopg2
+    state: present
+
+- name: Create user
+  become: true
+  become_method: sudo
+  become_flags: "-i"
+  become_user: postgres
+  postgresql_user:
+    name: "{{ item.db_user }}"
+    password: "{{ item.db_password }}"
+    role_attr_flags: "{{ item.db_user_roles }}"
+    state: present
+  loop: "{{ postgres_instance_dbs }}"
+  no_log: true
+
+- name: Create database
+  become: true
+  become_method: sudo
+  become_flags: "-i"
+  become_user: postgres
+  postgresql_db:
+    name: "{{ item.db_name }}"
+    owner: "{{ item.db_user }}"
+    state: present
+  loop: "{{ postgres_instance_dbs }}"
+  no_log: true
+
+- name: Create schema
+  become: true
+  become_method: sudo
+  become_flags: "-i"
+  become_user: postgres
+  postgresql_schema:
+    database: "{{ item.db_name }}"
+    name: "{{ item.db_schema }}"
+    owner: "{{ item.db_user }}"
+    state: present
+  loop: "{{ postgres_instance_dbs }}"
+  no_log: true

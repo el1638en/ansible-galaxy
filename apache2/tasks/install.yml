@@ -1,0 +1,14 @@
+---
+# tasks file to install apache2 and aditionnal modules
+
+- name: Installation des packages Apache2.
+  apt:
+    pkg: "{{ item }}"
+    state: present
+  loop: "{{ apache2_core_packages }}"
+
+- name: Installation des modules additionnels Apache2.
+  apt:
+    pkg: "{{ item }}"
+    state: present
+  loop: "{{ apache2_additionnal_packages }}"

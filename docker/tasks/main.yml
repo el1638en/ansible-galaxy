@@ -1,0 +1,24 @@
+---
+# tasks file for docker
+
+- include_tasks: "setup-{{ ansible_os_family | lower }}.yml"
+
+- name: Install Docker.
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - docker-ce
+    - docker-compose
+  notify: Restart Docker
+
+- name: Add the Python client for Docker
+  pip:
+    name: docker-py
+    state: present
+
+- name: Ensure Docker is started and enabled at boot.
+  systemd:
+    name: docker
+    state: started
+    enabled: true

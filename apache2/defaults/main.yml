@@ -1,0 +1,49 @@
+---
+# defaults file for apache2
+
+# Apache 2 config
+apache2_core_packages:
+  - "apache2"
+  - "apache2-utils"
+apache2_additionnal_packages:
+  - "libapache2-mod-jk"
+  - "libapache2-mod-security2"
+apache2_port: 80
+apache2_config_dir: "/etc/apache2"
+apache2_config_file: "{{ apache2_config_dir }}/apache2.conf"
+apache2_mods_available_dir: "{{ apache2_config_dir }}/mods-available"
+apache2_mods_enabled_dir: "{{ apache2_config_dir }}/mods-enabled"
+
+# Liste des modules Apache2 à désactiver
+apache2_mods_disabled: []
+
+# Liste des modules apache2 à activer
+apache2_mods_enabled:
+  - rewrite.load
+  - ssl.load
+  - proxy.conf
+  - proxy.load
+  - proxy_http.load
+# Directive de configurations
+apache2_config_params:
+  - { regexp: "^ServerTokens", value: "ServerTokens Prod" }
+  - { regexp: "^ServerSignature", value: "ServerSignature Off" }
+  - { regexp: "^MaxRequestWorkers", value: "MaxRequestWorkers 300" }
+  - { regexp: "^KeepAliveTimeout", value: "KeepAliveTimeout 15" }
+  - { regexp: "^SetOutputFilter", value: "SetOutputFilter DEFLATE" }
+
+# Apache2 modsecurity
+apache2_mod_security_dir: "/etc/modsecurity"
+apache2_mod_security_config:
+  - { regexp: "^SecRuleEngine", value: "SecRuleEngine On" }
+  - { regexp: "^SecDebugLogLevel", value: "SecDebugLogLevel 1" }
+
+# Apache server status module
+apache2_status_dir: "/var/www/status"
+apache2_status_server_name: ""
+apache2_status_server_alias: ""
+apache2_status_require_ip: ""
+apache2_status_require_host: ""
+apache2_server_admin: "root@admin"
+apache2_status_auth_login: "EL1638EN"
+apache2_status_auth_passowrd: "Mmdp-3325"

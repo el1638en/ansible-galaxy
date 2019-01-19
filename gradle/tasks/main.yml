@@ -1,0 +1,12 @@
+---
+# tasks file for gradle
+
+- name: Get Gradle version installed
+  command: >
+    {{ gradle_home }}/bin/gradle -v 2>&1
+  register: gradle_version_result
+  ignore_errors: true
+  changed_when: false
+
+- include_tasks: install.yml
+  when: (gradle_version_result is failed) or (gradle_version not in gradle_version_result.stdout)

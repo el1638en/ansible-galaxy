@@ -1,0 +1,4 @@
+---
+# defaults file for openjdk
+openjdk_package: "openjdk-8-jdk"
+openjdk_java_home: "java-8-openjdk"

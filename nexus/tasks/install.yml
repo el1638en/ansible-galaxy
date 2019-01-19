@@ -1,0 +1,60 @@
+---
+# tasks to install nexus
+
+- name: Create Nexus group
+  group:
+    name: "{{ nexus_group }}"
+    state: present
+
+- name: Create Nexus user
+  user:
+    name: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    password: "{{ nexus_user_password }}"
+    shell: "/bin/bash"
+  no_log: True
+
+- name: Download, decompress and delete Nexus archive
+  unarchive:
+    src: "{{ nexus_download_archive_url }}"
+    dest: "{{ nexus_install_directory }}/"
+    remote_src: True
+
+- name: Set owner and group of Nexus nexus_install_directory
+  file:
+    path: "{{ nexus_install_directory }}"
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    recurse: yes
+
+- name: Copy properties file & init script shell of Nexus
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+  with_items: "{{ nexus_files }}"
+
+- name: Create link to Nexus init script shell
+  file:
+    src: "{{ nexus_home }}/bin/nexus"
+    path: "/usr/bin/nexus"
+    state: link
+
+- name: Copy init script shell
+  copy:
+    src: "nexus.sh"
+    dest: "/etc/init.d/nexus"
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Enable Nexus service
+  service:
+    name: nexus
+    enabled: yes
+
+- name: Start Nexus service
+  service:
+    name: nexus
+    state: started

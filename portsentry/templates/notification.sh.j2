@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ADDRESS_MAIL={{ portsentry_alert_mail }}
+# grep into /etc/services to check which port was scanned
+MODE=${3/[sa]/}  # get rid of s and a
+
+SERVICEINFO=`grep "[[:space:]]$2/$MODE" /etc/services`
+
+MAIL_CONTENT=/tmp/portsentry_mail.txt
+
+echo "Mode : $MODE" > $MAIL_CONTENT
+
+echo "PortSentry detected that machin $1 scanned on server $HOSTNAME on port $2 - Protocol $3" >> $MAIL_CONTENT
+
+echo "the service (from /etc/services): $SERVICEINFO" >> $MAIL_CONTENT
+
+mail -s "[Portsentry] - A scan has been spotted on Server : `hostname`" $ADDRESS_MAIL <$MAIL_CONTENT
+
+rm $MAIL_CONTENT

@@ -1,0 +1,13 @@
+---
+# tasks file for ntp
+
+- name: Install ntp package.
+  apt:
+    name: ntp
+    state: present
+
+- name: Start the ntp service
+  systemd:
+    name: ntp
+    state: started
+    enabled: true
