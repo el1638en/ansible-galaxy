@@ -22,6 +22,7 @@ firewall_allowed_ports:
  - { port: "9000", protocol: "tcp", comment: "TCP - HTTP Input trafic - SonarQube" }
  - { port: "53", protocol: "tcp", comment: "TCP - DNS Input trafic" }
  - { port: "53", protocol: "udp", comment: "UDP - DNS Input trafic" }
+ - { port: "2812", protocol: "tcp", comment: "TCP - Monit Server Input trafic" }
 
 firewall_forwarded_ports: []
 firewall_additional_rules: []

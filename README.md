@@ -4,8 +4,7 @@
 
 Ansible est un logiciel open-source écrit en Python dédié au déploiement et à la configuration de serveurs à distance. Il permet d'automatiser les tâches récurrentes de déploiement et d'administration système. Ces tâches répétitives sont écrites dans des fichiers YAML appelés *playbooks*. C'est le contenu des *playbooks* qu'Ansible exécute sur les serveurs distants.
 
-Les avantages d'Ansible sont son idempotence et sa capacité à déployer plusieurs serveurs (groupe d'hôtes) simultanément sans aucun agent de déploiement.
-Ansible n'utilise pas de clients, ni d'agents sur les serveurs hôtes distants. Il nécessite une machine disposant d'un système Linux. Depuis cette machine («la tour de contrôle», la machine sur laquelle Ansible est installé), Ansible utilise le protocole *SSH* pour se connecter aux serveurs distants et exécute les *playbooks*.
+Les avantages d'Ansible sont son idempotence et sa capacité à déployer plusieurs serveurs (groupe d'hôtes) simultanément sans aucun agent de déploiement. Ansible n'utilise pas de clients, ni d'agents sur les serveurs hôtes distants. Il nécessite une machine disposant d'un système Linux. Depuis cette machine («la tour de contrôle», la machine sur laquelle Ansible est installé), Ansible utilise le protocole *SSH* pour se connecter aux serveurs distants et exécute les *playbooks*.
 
 ## Installation
 
@@ -58,7 +57,7 @@ Codename:       stretch
     source /usr/local/bin/virtualenvwrapper.sh
     ```
 
-      Si les chemins absolus de `python`, `virtualenv`, `virtualenvwrapper.sh` sont différents sur votre machine, il convient de modifier les lignes de codes ci-dessus.
+      Il convient d'adapter les chemins absolus de `python`, `virtualenv`, `virtualenvwrapper.sh` selon votre machine.
 
       Fermer votre terminal Shell et relancer de nouveau. Plusieurs lignes vont s’afficher. Pas d’inquiétude, cela n’arrive qu’une seule fois pour initialiser les commandes nécessaires au travail dans un environnement virtuel.
 

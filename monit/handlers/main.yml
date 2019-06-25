@@ -1,7 +1,7 @@
 ---
 # handlers file for monit
 
-- name: Reload monit
+- name: Restart monit
   systemd:
     name: monit
     state: restarted

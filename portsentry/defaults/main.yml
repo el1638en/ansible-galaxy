@@ -3,6 +3,7 @@
 
 portsentry_package: portsentry
 portsentry_config_file: "/etc/portsentry/portsentry.conf"
+portsentry_config_default_file: "/etc/default/portsentry"
 portsentry_notification_script: "/etc/portsentry/notification.sh"
 portsentry_ignore_file: "/etc/portsentry/portsentry.ignore.static"
 portsentry_alert_mail: "root@localhost"
@@ -10,3 +11,4 @@ portsentry_files:
   - { src: "portsentry.ignore.static.j2", dest: "{{ portsentry_ignore_file }}", mode: '0644' }
   - { src: "portsentry.conf.j2", dest: "{{ portsentry_config_file }}", mode: '0644' }
   - { src: "notification.sh.j2", dest: "{{ portsentry_notification_script }}", mode: '0755' }
+  - { src: "portsentry.j2", dest: "{{ portsentry_config_default_file }}", mode: '0644' }

@@ -33,6 +33,13 @@
     - { src: "sshd.conf.j2", dest: "{{ monit_sshd_config_file }}", enabled: "{{ monit_sshd_enabled }}" }
     - { src: "tomcat.conf.j2", dest: "{{ monit_tomcat_config_file }}", enabled: "{{ monit_tomcat_enabled }}" }
   when: "{{ item.enabled }}"
-  notify: Reload monit
 
-- include_tasks: iptables.yml
+- name: Stop monit
+  systemd:
+    name: monit
+    state: stopped
+
+- name: Start monit
+  systemd:
+    name: monit
+    state: started

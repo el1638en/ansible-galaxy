@@ -1,7 +1,7 @@
 docker
 =========
 
-`docker` installe le paquets éponyme.
+`docker` installe le paquet éponyme.
 
 Requirements
 ------------

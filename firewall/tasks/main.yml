@@ -29,3 +29,6 @@
     name: firewall
     enabled: true
     state: started
+
+- name: Restart firewall
+  meta: flush_handlers

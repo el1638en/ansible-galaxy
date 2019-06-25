@@ -167,7 +167,7 @@ BLOCK_TCP="1"
 
 # Newer versions of Linux support the reject flag now. This
 # is cleaner than the above option.
-KILL_ROUTE="/sbin/route add -host $TARGET$ reject"
+#KILL_ROUTE="/sbin/route add -host $TARGET$ reject"
 
 # Generic BSD (BSDI, OpenBSD, NetBSD, FreeBSD)
 #KILL_ROUTE="/sbin/route add $TARGET$ 333.444.555.666"
@@ -208,7 +208,7 @@ KILL_ROUTE="/sbin/route add -host $TARGET$ reject"
 #
 # iptables support for Linux with limit and LOG support. Logs only
 # a limited number of packets to avoid a denial of service attack.
-# KILL_ROUTE="/sbin/iptables -I INPUT -s $TARGET$ -j DROP && /sbin/iptables -I INPUT -s $TARGET$ -m limit --limit 3/minute --limit-burst 5 -j LOG --log-level DEBUG --log-prefix 'Portsentry: dropping: '"
+KILL_ROUTE="/sbin/iptables -I INPUT -s $TARGET$ -j DROP && /sbin/iptables -I INPUT -s $TARGET$ -m limit --limit 3/minute --limit-burst 5 -j LOG --log-level DEBUG --log-prefix 'Portsentry: dropping: '"
 #
 # For those of you running FreeBSD (and compatible) you can
 # use their built in firewalling as well.
@@ -223,7 +223,7 @@ KILL_ROUTE="/sbin/route add -host $TARGET$ reject"
 
 
 # iptables support for Linux
-#KILL_ROUTE="/sbin/iptables -I INPUT -s $TARGET$ -j DROP"
+# KILL_ROUTE="/sbin/iptables -I INPUT -s $TARGET$ -j DROP"
 
 ###############
 # TCP Wrappers#
