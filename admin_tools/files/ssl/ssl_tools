@@ -2,7 +2,6 @@
 
 ######### ===== Instructions to install this program =====
 
-
 ######### ===== END =====
 
 RED='\033[0;31m'
@@ -54,13 +53,13 @@ show_dir() {
 
 check_certificat_validity() {
 	if [ $# -eq 0 ]; then
-   		echo "$Usage: $0 <certificate_file absoluth path>" ;
-   		exit 1;
+   	echo "$Usage: $0 <certificate_file absoluth path>" ;
+   	exit 1;
 	fi
 	FILE=$1
 	if [ ! -e $FILE ] ; then
-   		echo "Certificat file $1 does not exist."
-  		exit 2;
+   	echo "Certificat file $1 does not exist."
+  	exit 2;
 	fi
 	EXPIRE_DATE=$(openssl x509 -in $FILE -noout -enddate | cut -f2 -d=);
 	EXPIRE_DATE_FORMAT=$(date --date="$EXPIRE_DATE" '+%Y%m%d')
@@ -68,77 +67,74 @@ check_certificat_validity() {
 	TODAY_DATE_FORMAT=$(date '+%Y%m%d')
 	if [ $EXPIRE_DATE_FORMAT -ge $TODAY_DATE_FORMAT ]; then
 		echo -e "${GREEN}Expiration date is : $EXPIRE_DATE_FORMAT_HUMAN. Certificat is valid${NO_COLOR}"
-    	echo "1";
+    echo "1";
 	else
 		echo -e "${RED}Expiration date is : $EXPIRE_DATE_FORMAT_HUMAN. Certificat is invalid${NO_COLOR}"
-    	echo "0";
+    echo "0";
 	fi
 }
 
 
 verify_certificat() {
 	declare certificat
-	# 	declare shouldMakePause=0
 	if ! [ $# -eq 1 ] ; then
 		read -p "Enter absolut path of the certificat : " certificat
 	else
 		certificat=$1
-  		shift;
-  	fi
-  	check_certificat_validity $certificat
-  	pause
+  	shift;
+  fi
+  check_certificat_validity $certificat
+  pause
 }
 
 add_default_private_ca() {
-
 	declare checkValidity=0
 	declare createPrivateCa=0
 	echo "###################################################################################"
 	echo "Starting  create private authority"
 	echo "###################################################################################"
 
-  	if [ ! -d $PRIVATE_CA_DIR ]; then
-  		mkdir -p $PRIVATE_CA_DIR
-  		echo -e "${GREEN}Initialize private CA directory ($PRIVATE_CA_DIR) successfully${NO_COLOR}"
-  	fi
+	if [ ! -d $PRIVATE_CA_DIR ]; then
+		mkdir -p $PRIVATE_CA_DIR
+		echo -e "${GREEN}Initialize private CA directory ($PRIVATE_CA_DIR) successfully${NO_COLOR}"
+	fi
 
-  	if [ ! -d $PRIVATE_CA_NEW_CERTS_DIR ]; then
-  		mkdir -p $PRIVATE_CA_NEW_CERTS_DIR
-  		echo -e "${GREEN}Initialize private CA new certificats directory ($PRIVATE_CA_NEW_CERTS_DIR) successfully${NO_COLOR}"
-  	fi
+	if [ ! -d $PRIVATE_CA_NEW_CERTS_DIR ]; then
+		mkdir -p $PRIVATE_CA_NEW_CERTS_DIR
+		echo -e "${GREEN}Initialize private CA new certificats directory ($PRIVATE_CA_NEW_CERTS_DIR) successfully${NO_COLOR}"
+	fi
 
-  	if [ ! -f $PRIVATE_CA_SERIAL ]; then
-  		echo '01' > $PRIVATE_CA_SERIAL
-  		echo -e "${GREEN}Initialize serial file ($PRIVATE_CA_SERIAL) successfully${NO_COLOR}"
-  	fi
+	if [ ! -f $PRIVATE_CA_SERIAL ]; then
+		echo '01' > $PRIVATE_CA_SERIAL
+		echo -e "${GREEN}Initialize serial file ($PRIVATE_CA_SERIAL) successfully${NO_COLOR}"
+	fi
 
-  	if [ ! -f $PRIVATE_CA_INDEX ]; then
-  		touch $PRIVATE_CA_INDEX
-  		echo -e "${GREEN}Initialize index file ($PRIVATE_CA_INDEX) successfully${NO_COLOR}"
-  	fi
+	if [ ! -f $PRIVATE_CA_INDEX ]; then
+		touch $PRIVATE_CA_INDEX
+		echo -e "${GREEN}Initialize index file ($PRIVATE_CA_INDEX) successfully${NO_COLOR}"
+	fi
 
-  	if [ ! -f $PRIVATE_CA_KEY ]; then
-  		openssl genrsa -out $PRIVATE_CA_KEY $PRIVATE_CA_BITS -rand file:/dev/random
-  		chmod 400 $PRIVATE_CA_KEY
-  		echo -e "${GREEN}Initialize private CA key file ($PRIVATE_CA_KEY) successfully${NO_COLOR}"
-  	fi
+	if [ ! -f $PRIVATE_CA_KEY ]; then
+		openssl genrsa -out $PRIVATE_CA_KEY $PRIVATE_CA_BITS -rand file:/dev/random
+		chmod 400 $PRIVATE_CA_KEY
+		echo -e "${GREEN}Initialize private CA key file ($PRIVATE_CA_KEY) successfully${NO_COLOR}"
+	fi
 
-  	if [ -f $PRIVATE_CA_CERT ]; then
-  		checkValidity=$(check_certificat_validity $PRIVATE_CA_CERT)
-  	fi
+	if [ -f $PRIVATE_CA_CERT ]; then
+		checkValidity=$(check_certificat_validity $PRIVATE_CA_CERT)
+	fi
 
-  	if [ ! -f $PRIVATE_CA_CERT ] || [ $checkValidity -eq 0 ]; then
-  		openssl req -new -x509 -key $PRIVATE_CA_KEY -out $PRIVATE_CA_CERT -days $PRIVATE_CA_DEFAULT_DAYS -config "$PRIVATE_CA_CONF_FILE" -extensions v3_ca -subj "$PRIVATE_CA_SUBJECT"
-  		createPrivateCa=1
-  	fi
+	if [ ! -f $PRIVATE_CA_CERT ] || [ $checkValidity -eq 0 ]; then
+		openssl req -new -x509 -key $PRIVATE_CA_KEY -out $PRIVATE_CA_CERT -days $PRIVATE_CA_DEFAULT_DAYS -config "$PRIVATE_CA_CONF_FILE" -extensions v3_ca -subj "$PRIVATE_CA_SUBJECT"
+		createPrivateCa=1
+	fi
 
-  	if [ $createPrivateCa -eq 0 ]; then
-  		echo -e "${GREEN}Private Certificat Authority already exists.${NO_COLOR}"
-  	else
-  		echo -e "${GREEN}Private Certificat Authority has beean created successfully.${NO_COLOR}"
-  	fi
-
-  	pause
+	if [ $createPrivateCa -eq 0 ]; then
+		echo -e "${GREEN}Private Certificat Authority already exists.${NO_COLOR}"
+	else
+		echo -e "${GREEN}Private Certificat Authority has beean created successfully.${NO_COLOR}"
+	fi
+	pause
 }
 
 generate_certificat_request_to_ca_authority() {
@@ -160,7 +156,6 @@ generate_certificat_request_to_ca_authority() {
     declare privateKey="$baseDirectory/${commonName}_private_key.pem"
     declare requestCsrFile="$baseDirectory/${commonName}_request.csr"
     declare subject="/C=$countryCode/ST=$stateName/L=$localityName/O=$localityName/CN=$commonName"
-
     if [ ! -d $baseDirectory ]; then
       mkdir -p $baseDirectory
       echo -e "${GREEN}Create successfully the base directory $baseDirectory.${NO_COLOR}"
@@ -197,7 +192,6 @@ generate_certificat_request_to_ca_authority() {
       exit 1
     fi
 
-
     if test "$securePrivateKey" = "yes"; then
       openssl req -new -passin file:"$passphraseFile" -key "$privateKey" -out "$requestCsrFile" -subj "$subject"
     else
@@ -213,18 +207,16 @@ generate_certificat_request_to_ca_authority() {
     fi
   fi
   pause
-
 }
 
 add_auto_signed_certificat() {
 	declare commonName
-
 	if ! [ $# -eq 1 ] ; then
 		read -p "Enter the server URL (e.g., myaddress.dyndns.org) : " commonName
 	else
-		commonName=$1
-  		shift;
-  	fi
+	  commonName=$1
+  	shift;
+  fi
 
  	echo "########   Starting  creating self-signed certificat for the server URL : $domaine  ########"
 
@@ -276,14 +268,13 @@ add_auto_signed_certificat() {
 	openssl ca -batch -notext -out "$certificatFile" -config "$PRIVATE_CA_CONF_FILE"  -infiles "$requestCsrFile"
 	if [ $? -eq 0 ]; then
 		echo -e "${GREEN}Auto-sign certificat successfully for the domain $domain.${NO_COLOR}"
-	echo -e "${GREEN}All files are present into the directory $baseDirectory.${NO_COLOR}"
-	show_dir $baseDirectory
+	  echo -e "${GREEN}All files are present into the directory $baseDirectory.${NO_COLOR}"
+	  show_dir $baseDirectory
 	else
 		echo -e "${RED}Failed to Auto-sign certificat.${NO_COLOR}"
 		exit 1
 	fi
-
-	echo "########   END   ########"
+	echo "######  END  ######"
 	pause
 }
 
@@ -318,9 +309,8 @@ pause(){
 }
 
 
-# Run as root, of course.
+# Run as root
 checkRoot
-
 
 # ----------------------------------------------
 # Trap CTRL+C, CTRL+Z and quit singles

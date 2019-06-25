@@ -1,8 +1,6 @@
 ---
 # defaults file for portsentry
 
-portsentry_tcp_mode: "tcp"
-portsentry_udp_mode: "udp"
 portsentry_package: portsentry
 portsentry_config_file: "/etc/portsentry/portsentry.conf"
 portsentry_notification_script: "/etc/portsentry/notification.sh"
